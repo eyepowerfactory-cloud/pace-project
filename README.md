@@ -1,6 +1,45 @@
 # Pace (ペース)
 
-ユーザーの自律性を尊重し、停滞からの再開を支援する「伴走型」目標管理アプリ
+<div align="center">
+
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
+![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?style=for-the-badge&logo=prisma)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC?style=for-the-badge&logo=tailwind-css)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+
+**ユーザーの自律性を尊重し、停滞からの再開を支援する「伴走型」目標管理アプリ**
+
+[🚀 デモを見る](#) | [📖 ドキュメント](./SETUP_GUIDE.md) | [🐛 バグ報告](https://github.com/eyepowerfactory-cloud/pace-project/issues)
+
+</div>
+
+---
+
+## ✨ 特徴
+
+Paceは従来の目標管理アプリとは異なり、**命令や強制ではなく、提案と選択**を重視します。
+
+- 🎯 **3層計画支援**: Vision (1-5年) → Quarter → Weekly/Daily の段階的な計画
+- 🧠 **AI状態推定**: 行動ログから STUCK/OVERLOAD 等を自動推定
+- 💡 **パーソナライズされた提案**: 状態に応じた10種類の提案タイプ
+- 🛡️ **罪悪感を煽らない設計**: 「すべき」「しなさい」などの命令形を一切使用しない
+- 🔒 **セキュアな認証**: JWT + sessionVersion方式で強制ログアウトに対応
+- 🔄 **Resilience パターン**: AI API呼び出しの信頼性を確保
+
+## 🎬 デモ
+
+> 🚧 デプロイ後にデモリンクを追加予定
+
+**テストアカウント:**
+- 管理者: `admin@pace.local` / `admin123456`
+- Alice (OVERLOAD): `alice@pace.local` / `test123456`
+- Bob (STUCK): `bob@pace.local` / `test123456`
+- Carol (NORMAL): `carol@pace.local` / `test123456`
+
+## 🖼️ スクリーンショット
+
+> 🚧 スクリーンショットは準備中です
 
 ## プロジェクト概要
 
@@ -268,6 +307,42 @@ gcloud run deploy pace-app \
   --set-env-vars ANTHROPIC_API_KEY="..."
 ```
 
-## ライセンス
+## 🤝 コントリビューション
 
-MIT
+コントリビューションを歓迎します！以下の方法で参加できます：
+
+1. このリポジトリをフォーク
+2. 新しいブランチを作成 (`git checkout -b feature/amazing-feature`)
+3. 変更をコミット (`git commit -m 'Add amazing feature'`)
+4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
+5. プルリクエストを作成
+
+バグ報告や機能要望は [Issues](https://github.com/eyepowerfactory-cloud/pace-project/issues) からお願いします。
+
+## 🙏 謝辞
+
+このプロジェクトは以下の技術によって支えられています：
+
+- [Next.js](https://nextjs.org/) - Reactフレームワーク
+- [Prisma](https://www.prisma.io/) - ORMデータベースツールキット
+- [Anthropic Claude](https://www.anthropic.com/) - AI API
+- [Tailwind CSS](https://tailwindcss.com/) - ユーティリティファーストCSSフレームワーク
+- [Neon](https://neon.tech/) - サーバーレスPostgreSQL
+
+## 📄 ライセンス
+
+MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してください。
+
+## 📧 お問い合わせ
+
+プロジェクトに関する質問や提案は [Issues](https://github.com/eyepowerfactory-cloud/pace-project/issues) でお願いします。
+
+---
+
+<div align="center">
+
+**Built with ❤️ using Next.js and Claude AI**
+
+⭐ このプロジェクトが役に立ったら、ぜひスターをお願いします！
+
+</div>
