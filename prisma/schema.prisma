@@ -1,0 +1,538 @@
+// Pace プロジェクト完全Prismaスキーマ
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Enums
+// ============================================================================
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum VisionHorizon {
+  ONE_YEAR
+  THREE_YEARS
+  FIVE_YEARS
+}
+
+enum QuarterCadence {
+  Q1 // Jan-Mar
+  Q2 // Apr-Jun
+  Q3 // Jul-Sep
+  Q4 // Oct-Dec
+}
+
+enum GoalFramework {
+  NONE
+  OKR
+  SMART
+  WOOP
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum TaskOriginType {
+  USER_CREATED
+  GENERATED_FROM_SUGGESTION
+  GENERATED_FROM_GOAL
+}
+
+enum StateType {
+  OVERLOAD           // タスク過負荷
+  STUCK              // 停滞
+  VISION_OVERLOAD    // Vision多すぎ
+  PLAN_OVERLOAD      // Plan多すぎ
+  AUTONOMY_REACTANCE // 提案拒否反応
+  LOW_MOTIVATION     // モチベーション低下
+  LOW_SELF_EFFICACY  // 自己効力感低下
+}
+
+enum SuggestionType {
+  PLAN_REDUCE                 // タスク削減提案
+  TASK_MICROSTEP              // マイクロステップ分解
+  PRIORITY_FOCUS              // 優先度集中
+  GOAL_REFRAME                // Goal見直し
+  MOTIVATION_REMIND           // Why note思い出し
+  AUTONOMY_ADJUST             // 提案頻度調整
+  RESUME_SUPPORT              // 再開支援
+  VISION_CREATE_ASSIST        // Vision作成支援
+  VISION_TO_QUARTER_TRANSLATE // Vision→Quarter翻訳
+  GOAL_TO_TASK_DRAFT          // Goal→Task生成
+}
+
+enum SuggestionResponse {
+  ACCEPTED
+  DISMISSED
+  POSTPONED
+  IGNORED_TIMEOUT
+}
+
+enum SuggestionContext {
+  HOME
+  TASK_LIST
+  GOAL_DETAIL
+  VISION_BOARD
+}
+
+enum PromptKey {
+  SUGGESTION_COPY
+  TASK_MICROSTEP_DRAFT
+  GOAL_TO_TASK_DRAFT
+  VISION_TO_QUARTER_DRAFT
+}
+
+enum PromptStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum ExperimentStatus {
+  DRAFT
+  RUNNING
+  PAUSED
+  COMPLETED
+}
+
+enum AiGenerationType {
+  SUGGESTION_COPY
+  TASK_DRAFT
+  GOAL_DRAFT
+  QUARTER_DRAFT
+}
+
+enum AdminAction {
+  SUSPEND_USER
+  UNSUSPEND_USER
+  FORCE_LOGOUT
+  UPDATE_USER_ROLE
+  DELETE_USER
+  UPDATE_PROMPT_VERSION
+  CREATE_EXPERIMENT
+  PAUSE_EXPERIMENT
+}
+
+enum AuditTargetType {
+  USER
+  PROMPT_VERSION
+  EXPERIMENT
+  SYSTEM
+}
+
+// ============================================================================
+// User & Auth
+// ============================================================================
+
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  passwordHash    String
+  displayName     String?
+  role            UserRole      @default(USER)
+  status          AccountStatus @default(ACTIVE)
+  sessionVersion  Int           @default(1) // 強制ログアウト用
+
+  // アカウント停止関連
+  suspendedAt     DateTime?
+  suspendedReason String?
+
+  // メタデータ
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // リレーション
+  visionCards     VisionCard[]
+  quarterGoals    QuarterGoal[]
+  weeklyPlans     WeeklyPlan[]
+  dailyPlans      DailyPlan[]
+  tasks           Task[]
+  stateSnapshots  StateSnapshot[]
+  suggestionEvents SuggestionEvent[]
+  experimentAssignments ExperimentAssignment[]
+  adminAuditLogs  AdminAuditLog[] @relation("AdminUser")
+
+  @@index([email])
+  @@index([status])
+}
+
+// ============================================================================
+// Vision & Goals
+// ============================================================================
+
+model VisionCard {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  horizon     VisionHorizon
+  title       String
+  description String?
+  whyNote     String?       // 「なぜこれを目指すのか」
+  tags        String[]      @default([])
+
+  isArchived  Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // リレーション
+  quarterGoals QuarterGoal[]
+
+  @@index([userId, horizon])
+  @@index([userId, isArchived])
+}
+
+model QuarterGoal {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  visionCardId  String?
+  visionCard    VisionCard?     @relation(fields: [visionCardId], references: [id], onDelete: SetNull)
+
+  year          Int             // 2026
+  cadence       QuarterCadence  // Q1, Q2, Q3, Q4
+  title         String
+  theme         String?
+  framework     GoalFramework   @default(NONE)
+  frameworkJson Json?           // OKR: {objective, keyResults}, SMART: {specific, measurable...}
+
+  isArchived    Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // リレーション
+  tasks         Task[]
+
+  @@unique([userId, year, cadence])
+  @@index([userId, isArchived])
+}
+
+// ============================================================================
+// Plans
+// ============================================================================
+
+model WeeklyPlan {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  weekStart      DateTime // 週の開始日（月曜日）
+  theme          String?
+  reflectionNote String?  // 振り返りメモ
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // リレーション
+  tasks          Task[]   @relation("WeeklyPlanTasks")
+
+  @@unique([userId, weekStart])
+  @@index([userId, weekStart])
+}
+
+model DailyPlan {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date           DateTime @db.Date
+  morningNote    String?
+  eveningNote    String?
+  energyLevel    Int?     @db.SmallInt // 1-5
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // リレーション
+  tasks          Task[]   @relation("DailyPlanTasks")
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+// ============================================================================
+// Tasks
+// ============================================================================
+
+model Task {
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title           String
+  description     String?
+  status          TaskStatus     @default(TODO)
+  priority        Int            @default(50) @db.SmallInt // 0-100
+  effortMin       Int?           // 見積もり時間（分）
+
+  // 紐付け
+  quarterGoalId   String?
+  quarterGoal     QuarterGoal?   @relation(fields: [quarterGoalId], references: [id], onDelete: SetNull)
+
+  weeklyPlanId    String?
+  weeklyPlan      WeeklyPlan?    @relation("WeeklyPlanTasks", fields: [weeklyPlanId], references: [id], onDelete: SetNull)
+  plannedWeekStart DateTime?     // 週計画の開始日（検索用）
+
+  dailyPlanId     String?
+  dailyPlan       DailyPlan?     @relation("DailyPlanTasks", fields: [dailyPlanId], references: [id], onDelete: SetNull)
+  plannedDate     DateTime?      @db.Date
+
+  // 期限・完了
+  dueDate         DateTime?
+  completedAt     DateTime?
+
+  // 起源トラッキング
+  originType      TaskOriginType @default(USER_CREATED)
+  originId        String?        // SuggestionEvent.id or QuarterGoal.id
+
+  // 延期カウント
+  postponeCount   Int            @default(0)
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([userId, status])
+  @@index([userId, plannedWeekStart])
+  @@index([userId, plannedDate])
+  @@index([quarterGoalId])
+}
+
+// ============================================================================
+// State Estimation
+// ============================================================================
+
+model StateSnapshot {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  windowDays        Int       @default(7)
+  scoresJson        Json      // {OVERLOAD: {score, signals}, STUCK: {...}, ...}
+  primaryState      StateType
+  primaryConfidence Int       @db.SmallInt // 0-100
+  topSignalsJson    Json      // ["overdue_tasks_high", "postpone_frequent"]
+
+  // 自己申告データ（任意）
+  selfReportJson    Json?     // {capacity: 5, stress: 8, clarity: 3}
+
+  createdAt         DateTime  @default(now())
+
+  // リレーション
+  suggestionEvents  SuggestionEvent[]
+
+  @@index([userId, createdAt])
+}
+
+// ============================================================================
+// Suggestions
+// ============================================================================
+
+model SuggestionEvent {
+  id               String             @id @default(cuid())
+  userId           String
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  suggestionType   SuggestionType
+  stateType        StateType?
+  stateScore       Int?               @db.SmallInt
+
+  context          SuggestionContext  @default(HOME)
+  payloadJson      Json               // Type別のペイロード
+
+  // AI生成コピー
+  titleText        String?
+  messageText      String?
+  optionsJson      Json?              // [{key: 'ACCEPT', label: '...'}]
+
+  // ユーザー応答
+  response         SuggestionResponse?
+  responsePayload  Json?              // ユーザーが選択した内容
+  respondedAt      DateTime?
+
+  // A/Bテスト
+  experimentKey    String?
+  variantKey       String?
+
+  // 状態スナップショット紐付け
+  stateSnapshotId  String?
+  stateSnapshot    StateSnapshot?     @relation(fields: [stateSnapshotId], references: [id], onDelete: SetNull)
+
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([userId, response])
+  @@index([suggestionType])
+}
+
+// ============================================================================
+// Prompt Management
+// ============================================================================
+
+model PromptTemplate {
+  id          String          @id @default(cuid())
+  key         PromptKey       @unique
+  name        String
+  description String?
+  category    String?
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // リレーション
+  versions    PromptVersion[]
+
+  @@index([key])
+}
+
+model PromptVersion {
+  id             String         @id @default(cuid())
+  templateId     String
+  template       PromptTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  version        Int            // 1, 2, 3...
+  variant        String         @default("default") // "default", "concise", "detailed"
+  status         PromptStatus   @default(DRAFT)
+
+  systemText     String         @db.Text
+  userText       String         @db.Text
+
+  // メタデータ
+  hash           String         @unique // SHA256(systemText + userText)
+  notes          String?
+
+  createdBy      String?
+  createdAt      DateTime       @default(now())
+  activatedAt    DateTime?
+
+  // リレーション
+  aiGenerationLogs AiGenerationLog[]
+
+  @@unique([templateId, version, variant])
+  @@index([templateId, status])
+  @@index([hash])
+}
+
+// ============================================================================
+// A/B Testing
+// ============================================================================
+
+model Experiment {
+  id          String            @id @default(cuid())
+  key         String            @unique
+  name        String
+  description String?
+  status      ExperimentStatus  @default(DRAFT)
+
+  startedAt   DateTime?
+  endedAt     DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // リレーション
+  variants    ExperimentVariant[]
+  assignments ExperimentAssignment[]
+
+  @@index([key])
+  @@index([status])
+}
+
+model ExperimentVariant {
+  id           String     @id @default(cuid())
+  experimentId String
+  experiment   Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  key          String     // "control", "variant_a", "variant_b"
+  name         String
+  weight       Int        @default(50) @db.SmallInt // 0-100（割り当て比率）
+  configJson   Json?      // {promptVersionOverrides: {SUGGESTION_COPY: "abc123"}}
+
+  createdAt    DateTime   @default(now())
+
+  @@unique([experimentId, key])
+  @@index([experimentId])
+}
+
+model ExperimentAssignment {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  experimentId String
+  experiment   Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  variantKey   String
+  assignedAt   DateTime   @default(now())
+
+  @@unique([userId, experimentId])
+  @@index([userId])
+  @@index([experimentId, variantKey])
+}
+
+// ============================================================================
+// Observability
+// ============================================================================
+
+model AiGenerationLog {
+  id              String           @id @default(cuid())
+  userId          String
+
+  type            AiGenerationType
+  promptKey       PromptKey
+  promptVersionId String?
+  promptVersion   PromptVersion?   @relation(fields: [promptVersionId], references: [id], onDelete: SetNull)
+
+  modelName       String
+  inputJson       Json             // {context, signals, etc.}
+  outputJson      Json             // 生成結果
+
+  validationOk    Boolean          @default(false)
+  violationsJson  Json?            // トーン違反
+  repairUsed      Boolean          @default(false)
+  fallbackUsed    Boolean          @default(false)
+
+  latencyMs       Int?
+  tokenCountIn    Int?
+  tokenCountOut   Int?
+
+  createdAt       DateTime         @default(now())
+
+  @@index([userId, createdAt])
+  @@index([type])
+  @@index([promptKey])
+}
+
+model AdminAuditLog {
+  id           String          @id @default(cuid())
+  adminUserId  String
+  adminUser    User            @relation("AdminUser", fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  action       AdminAction
+  targetType   AuditTargetType
+  targetId     String?
+  detailsJson  Json?           // 操作の詳細
+
+  createdAt    DateTime        @default(now())
+
+  @@index([adminUserId, createdAt])
+  @@index([targetType, targetId])
+  @@index([action])
+}
