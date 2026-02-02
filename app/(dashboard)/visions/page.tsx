@@ -57,15 +57,15 @@ export default function VisionsPage() {
       if (editingVision) {
         await updateVisionAction(editingVision.id, {
           title: formData.title,
-          description: formData.description || null,
-          whyNote: formData.whyNote || null,
+          description: formData.description || undefined,
+          whyNote: formData.whyNote || undefined,
         });
       } else {
         await createVisionAction({
           horizon: formData.horizon,
           title: formData.title,
-          description: formData.description || null,
-          whyNote: formData.whyNote || null,
+          description: formData.description || undefined,
+          whyNote: formData.whyNote || undefined,
         });
       }
 

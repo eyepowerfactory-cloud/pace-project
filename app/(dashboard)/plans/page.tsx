@@ -101,8 +101,8 @@ export default function PlansPage() {
 
       await upsertWeeklyPlanAction({
         weekStart: selectedWeekStart,
-        intention: weeklyForm.intention || null,
-        reflectionNote: weeklyForm.reflectionNote || null,
+        intention: weeklyForm.intention || undefined,
+        reflectionNote: weeklyForm.reflectionNote || undefined,
       });
 
       await loadPlans();
@@ -121,8 +121,8 @@ export default function PlansPage() {
 
       await upsertDailyPlanAction({
         date: selectedDate,
-        intention: dailyForm.intention || null,
-        reflectionNote: dailyForm.reflectionNote || null,
+        intention: dailyForm.intention || undefined,
+        reflectionNote: dailyForm.reflectionNote || undefined,
       });
 
       await loadPlans();

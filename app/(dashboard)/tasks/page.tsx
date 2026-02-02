@@ -19,8 +19,9 @@ interface Task {
   postponeCount: number;
   completedAt: Date | null;
   dueDate: Date | null;
-  plannedWeekStart: Date | null;
+  plannedWeekStart?: Date | null;
   createdAt: Date;
+  quarterGoal?: any;
 }
 
 export default function TasksPage() {
@@ -65,19 +66,19 @@ export default function TasksPage() {
         // 更新
         await updateTaskAction(editingTask.id, {
           title: formData.title,
-          description: formData.description || null,
+          description: formData.description || undefined,
           priority: formData.priority,
-          dueDate: formData.dueDate ? new Date(formData.dueDate) : null,
-          plannedWeekStart: formData.plannedWeekStart ? new Date(formData.plannedWeekStart) : null,
+          dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
+          plannedWeekStart: formData.plannedWeekStart ? new Date(formData.plannedWeekStart) : undefined,
         });
       } else {
         // 新規作成
         await createTaskAction({
           title: formData.title,
-          description: formData.description || null,
+          description: formData.description || undefined,
           priority: formData.priority,
-          dueDate: formData.dueDate ? new Date(formData.dueDate) : null,
-          plannedWeekStart: formData.plannedWeekStart ? new Date(formData.plannedWeekStart) : null,
+          dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
+          plannedWeekStart: formData.plannedWeekStart ? new Date(formData.plannedWeekStart) : undefined,
         });
       }
 
@@ -125,7 +126,7 @@ export default function TasksPage() {
 
   const handlePostpone = async (taskId: string) => {
     try {
-      await postponeTaskAction(taskId, { reason: 'ユーザーが延期' });
+      await postponeTaskAction(taskId);
       await loadTasks();
     } catch (err: any) {
       setError(err.message || 'タスクの延期に失敗しました');

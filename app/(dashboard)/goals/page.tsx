@@ -43,7 +43,7 @@ export default function GoalsPage() {
     try {
       setLoading(true);
       setError('');
-      const result = await listQuarterGoalsAction({ limit: 100 });
+      const result = await listQuarterGoalsAction();
       setGoals(result.goals as QuarterGoal[]);
     } catch (err: any) {
       setError(err.message || '目標の読み込みに失敗しました');
@@ -60,12 +60,12 @@ export default function GoalsPage() {
       if (editingGoal) {
         await updateQuarterGoalAction(editingGoal.id, {
           title: formData.title,
-          theme: formData.theme || null,
+          theme: formData.theme || undefined,
         });
       } else {
         await createQuarterGoalAction({
           title: formData.title,
-          theme: formData.theme || null,
+          theme: formData.theme || undefined,
           framework: formData.framework,
           year: formData.year,
           cadence: formData.cadence,

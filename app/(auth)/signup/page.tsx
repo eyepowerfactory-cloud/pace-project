@@ -23,8 +23,6 @@ export default function SignupPage() {
 
       if (result.success) {
         router.push('/dashboard');
-      } else {
-        setError(result.error || 'サインアップに失敗しました');
       }
     } catch (err: any) {
       setError(err.message || 'サインアップに失敗しました');
