@@ -156,6 +156,16 @@ model User {
   suspendedAt     DateTime?
   suspendedReason String?
 
+  // プロフィール情報（オンボーディング用）
+  ageRange            String?   // 年齢層（例: "20代", "30代"）
+  occupation          String?   // 職業
+  familyStructure     String?   // 家族構成
+  hobbies             String?   // 趣味や興味
+  currentChallenges   String?   // 現在の課題や悩み
+  coreValues          String?   // 大切にしている価値観
+  idealState          String?   // 理想の状態/なりたい姿
+  onboardingCompletedAt DateTime? // オンボーディング完了日時
+
   // メタデータ
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt

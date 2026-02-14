@@ -170,3 +170,73 @@ export async function getCurrentUserAction() {
 
   return user;
 }
+
+/**
+ * プロフィール情報を更新
+ */
+export async function updateProfileAction(data: {
+  ageRange?: string;
+  occupation?: string;
+  familyStructure?: string;
+  hobbies?: string;
+  currentChallenges?: string;
+  coreValues?: string;
+  idealState?: string;
+}) {
+  const auth = await requireActiveSession();
+
+  const user = await prisma.user.update({
+    where: { id: auth.userId },
+    data: {
+      ageRange: data.ageRange,
+      occupation: data.occupation,
+      familyStructure: data.familyStructure,
+      hobbies: data.hobbies,
+      currentChallenges: data.currentChallenges,
+      coreValues: data.coreValues,
+      idealState: data.idealState,
+      onboardingCompletedAt: new Date(),
+    },
+    select: {
+      id: true,
+      email: true,
+      displayName: true,
+      ageRange: true,
+      occupation: true,
+      familyStructure: true,
+      hobbies: true,
+      currentChallenges: true,
+      coreValues: true,
+      idealState: true,
+      onboardingCompletedAt: true,
+    },
+  });
+
+  return user;
+}
+
+/**
+ * 現在のユーザーのプロフィール情報を取得
+ */
+export async function getProfileAction() {
+  const auth = await requireActiveSession();
+
+  const user = await prisma.user.findUnique({
+    where: { id: auth.userId },
+    select: {
+      id: true,
+      email: true,
+      displayName: true,
+      ageRange: true,
+      occupation: true,
+      familyStructure: true,
+      hobbies: true,
+      currentChallenges: true,
+      coreValues: true,
+      idealState: true,
+      onboardingCompletedAt: true,
+    },
+  });
+
+  return user;
+}

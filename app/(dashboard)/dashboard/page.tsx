@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getLatestStateSnapshotAction } from '@/actions/state';
 import { getSuggestionsAction, recordSuggestionResponseAction, applySuggestionAction } from '@/actions/suggestions';
+import { getProfileAction } from '@/actions/auth';
+import OnboardingProfileForm from '@/components/OnboardingProfileForm';
 
 type StateType = 'NORMAL' | 'OVERLOAD' | 'STUCK' | 'VISION_OVERLOAD' | 'PLAN_OVERLOAD' |
   'AUTONOMY_REACTANCE' | 'LOW_MOTIVATION' | 'LOW_SELF_EFFICACY';
@@ -29,6 +31,8 @@ export default function DashboardPage() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [hasProfile, setHasProfile] = useState(false);
+  const [showNextSteps, setShowNextSteps] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -40,6 +44,11 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       setError('');
+
+      // プロフィール情報を取得
+      const profile = await getProfileAction();
+      const hasCompletedProfile = !!profile?.onboardingCompletedAt;
+      setHasProfile(hasCompletedProfile);
 
       // 提案を取得（forceComputeオプション付き）
       const suggestionsResult = await getSuggestionsAction({
@@ -292,50 +301,83 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          ) : isNewUser ? (
+          ) : isNewUser && !hasProfile ? (
+            // プロフィール未入力：オンボーディングフォームを表示
+            <div>
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  はじめまして！Paceへようこそ
+                </h3>
+                <div className="space-y-3 text-gray-700 text-lg max-w-2xl mx-auto">
+                  <p>
+                    私はPace、あなたの目標達成を伴走するパートナーです。
+                  </p>
+                  <p>
+                    このシステムは、あなたに「〜すべき」「〜しなさい」と命令することはありません。<br />
+                    代わりに、あなたの状況を見守りながら、必要に応じて提案をさせていただきます。
+                  </p>
+                  <p className="font-medium text-indigo-600 text-xl mt-6">
+                    あなたをサポートできたら嬉しいです。
+                  </p>
+                </div>
+              </div>
+              <OnboardingProfileForm
+                onComplete={() => {
+                  setHasProfile(true);
+                  setShowNextSteps(true);
+                }}
+              />
+            </div>
+          ) : isNewUser && (hasProfile || showNextSteps) ? (
+            // プロフィール入力済み：次のステップ選択
             <div className="glass-card rounded-3xl p-12 text-center max-w-3xl mx-auto">
-              <div className="text-6xl mb-6 animate-float">👋</div>
+              <div className="text-6xl mb-6 animate-float">✨</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                はじめまして！Paceへようこそ
+                教えていただき、ありがとうございます！
               </h3>
-              <div className="space-y-4 text-left text-gray-700 leading-relaxed text-lg">
+              <div className="space-y-4 text-gray-700 leading-relaxed text-lg mb-10">
                 <p>
-                  私はPace、あなたの目標達成を伴走するパートナーです。
+                  それでは、どんなことから始めてみたいですか？
                 </p>
-                <p>
-                  このシステムは、あなたに「〜すべき」「〜しなさい」と命令することはありません。
-                  代わりに、あなたの状況を見守りながら、必要に応じて提案をさせていただきます。
-                </p>
-                <p className="font-medium text-indigo-600">
-                  あなたをサポートできたら嬉しいです。
-                </p>
-                <p>
-                  よろしければ、あなたのことについて少し教えていただけますか？
+                <p className="text-sm text-gray-600">
+                  あなたのペースで、好きなところから始めていただけます
                 </p>
               </div>
-              <div className="mt-10 space-y-3">
+              <div className="space-y-4">
                 <button
                   onClick={() => router.push('/visions')}
-                  className="btn-gradient w-full sm:w-auto"
+                  className="w-full sm:w-auto btn-gradient text-left px-8 py-5 flex items-start gap-4"
                 >
-                  <span>✨ ビジョンを作成する</span>
+                  <span className="text-3xl">✨</span>
+                  <div className="text-left">
+                    <div className="font-bold text-lg mb-1">長期的なビジョンを描きたい</div>
+                    <div className="text-sm opacity-90">1年後、3年後、5年後の理想の姿を考えてみませんか？</div>
+                  </div>
                 </button>
                 <button
                   onClick={() => router.push('/goals')}
-                  className="btn-gradient w-full sm:w-auto ml-0 sm:ml-3 mt-3 sm:mt-0"
+                  className="w-full sm:w-auto btn-gradient text-left px-8 py-5 flex items-start gap-4"
                 >
-                  <span>🎯 目標を設定する</span>
+                  <span className="text-3xl">🎯</span>
+                  <div className="text-left">
+                    <div className="font-bold text-lg mb-1">具体的な目標を立てたい</div>
+                    <div className="text-sm opacity-90">今期（3ヶ月）で達成したいことを設定してみませんか？</div>
+                  </div>
                 </button>
                 <button
                   onClick={() => router.push('/tasks')}
-                  className="btn-gradient w-full sm:w-auto ml-0 sm:ml-3 mt-3 sm:mt-0"
+                  className="w-full sm:w-auto btn-gradient text-left px-8 py-5 flex items-start gap-4"
                 >
-                  <span>📝 タスクを追加する</span>
+                  <span className="text-3xl">📝</span>
+                  <div className="text-left">
+                    <div className="font-bold text-lg mb-1">日々のタスクを整理したい</div>
+                    <div className="text-sm opacity-90">まずはやることを書き出してみませんか？</div>
+                  </div>
                 </button>
               </div>
-              <p className="mt-8 text-sm text-gray-500">
-                まずは小さく始めてみませんか？<br />
-                あなたのペースで、あなたのやり方で。
+              <p className="mt-10 text-sm text-gray-500">
+                どれから始めても大丈夫です。<br />
+                まずは小さく、あなたのやり方で。
               </p>
             </div>
           ) : (
