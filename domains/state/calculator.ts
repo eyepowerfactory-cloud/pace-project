@@ -64,13 +64,16 @@ export async function computeStateSnapshot(
   const effectiveScore = primaryData.score < 20 ? 0 : primaryData.score;
   const effectiveSignals = effectiveScore === 0 ? [] : primaryData.signals;
 
+  // 全スコアが低い場合はNORMAL状態とする
+  const finalPrimaryState = effectiveScore === 0 ? 'NORMAL' : primaryType;
+
   // 4. DB保存
   const snapshot = await prisma.stateSnapshot.create({
     data: {
       userId,
       windowDays,
       scoresJson: scores as any,
-      primaryState: primaryType as any,
+      primaryState: finalPrimaryState as any,
       primaryConfidence: effectiveScore,
       topSignalsJson: effectiveSignals as any,
       selfReportJson: selfReportJson as any || null,

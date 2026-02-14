@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getLatestStateSnapshotAction } from '@/actions/state';
 import { getSuggestionsAction, recordSuggestionResponseAction, applySuggestionAction } from '@/actions/suggestions';
 
-type StateType = 'OVERLOAD' | 'STUCK' | 'VISION_OVERLOAD' | 'PLAN_OVERLOAD' |
+type StateType = 'NORMAL' | 'OVERLOAD' | 'STUCK' | 'VISION_OVERLOAD' | 'PLAN_OVERLOAD' |
   'AUTONOMY_REACTANCE' | 'LOW_MOTIVATION' | 'LOW_SELF_EFFICACY';
 
 interface Snapshot {
@@ -95,6 +95,7 @@ export default function DashboardPage() {
     if (!state) return 'bg-gray-100 text-gray-800';
 
     const colors: Record<StateType, string> = {
+      NORMAL: 'bg-green-100 text-green-800',
       OVERLOAD: 'bg-red-100 text-red-800',
       STUCK: 'bg-yellow-100 text-yellow-800',
       VISION_OVERLOAD: 'bg-orange-100 text-orange-800',
@@ -111,6 +112,7 @@ export default function DashboardPage() {
     if (!state) return '状態不明';
 
     const labels: Record<StateType, string> = {
+      NORMAL: '順調',
       OVERLOAD: '負荷過多',
       STUCK: '停滞中',
       VISION_OVERLOAD: 'ビジョン過多',
@@ -165,7 +167,8 @@ export default function DashboardPage() {
                       )}`}
                     >
                       <span className="text-2xl">
-                        {snapshot.primaryState === 'OVERLOAD' ? '🔥' :
+                        {snapshot.primaryState === 'NORMAL' ? '✨' :
+                         snapshot.primaryState === 'OVERLOAD' ? '🔥' :
                          snapshot.primaryState === 'STUCK' ? '⏸️' :
                          snapshot.primaryState === 'VISION_OVERLOAD' ? '🌊' :
                          snapshot.primaryState === 'PLAN_OVERLOAD' ? '📚' :
@@ -282,6 +285,52 @@ export default function DashboardPage() {
                   )}
                 </div>
               ))}
+            </div>
+          ) : snapshot?.primaryState === 'NORMAL' ? (
+            <div className="glass-card rounded-3xl p-12 text-center max-w-3xl mx-auto">
+              <div className="text-6xl mb-6 animate-float">👋</div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">
+                はじめまして！Paceへようこそ
+              </h3>
+              <div className="space-y-4 text-left text-gray-700 leading-relaxed text-lg">
+                <p>
+                  私はPace、あなたの目標達成を伴走するパートナーです。
+                </p>
+                <p>
+                  このシステムは、あなたに「〜すべき」「〜しなさい」と命令することはありません。
+                  代わりに、あなたの状況を見守りながら、必要に応じて提案をさせていただきます。
+                </p>
+                <p className="font-medium text-indigo-600">
+                  あなたをサポートできたら嬉しいです。
+                </p>
+                <p>
+                  よろしければ、あなたのことについて少し教えていただけますか？
+                </p>
+              </div>
+              <div className="mt-10 space-y-3">
+                <button
+                  onClick={() => router.push('/visions')}
+                  className="btn-gradient w-full sm:w-auto"
+                >
+                  <span>✨ ビジョンを作成する</span>
+                </button>
+                <button
+                  onClick={() => router.push('/goals')}
+                  className="btn-gradient w-full sm:w-auto ml-0 sm:ml-3 mt-3 sm:mt-0"
+                >
+                  <span>🎯 目標を設定する</span>
+                </button>
+                <button
+                  onClick={() => router.push('/tasks')}
+                  className="btn-gradient w-full sm:w-auto ml-0 sm:ml-3 mt-3 sm:mt-0"
+                >
+                  <span>📝 タスクを追加する</span>
+                </button>
+              </div>
+              <p className="mt-8 text-sm text-gray-500">
+                まずは小さく始めてみませんか？<br />
+                あなたのペースで、あなたのやり方で。
+              </p>
             </div>
           ) : (
             <div className="glass-card rounded-3xl p-12 text-center">

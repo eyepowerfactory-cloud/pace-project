@@ -81,9 +81,10 @@ export async function extractSignals(
     select: { updatedAt: true },
   });
 
+  // 新規ユーザー（タスクが0件）の場合は0日として扱う
   const inactiveDays = lastTaskActivity
     ? Math.floor((now.getTime() - lastTaskActivity.updatedAt.getTime()) / (1000 * 60 * 60 * 24))
-    : 999;
+    : 0;
 
   // 5. 提案拒否率（窓期間内）
   const suggestionsInWindow = await prisma.suggestionEvent.count({

@@ -57,6 +57,7 @@ enum TaskOriginType {
 }
 
 enum StateType {
+  NORMAL             // 順調（問題なし）
   OVERLOAD           // タスク過負荷
   STUCK              // 停滞
   VISION_OVERLOAD    // Vision多すぎ
