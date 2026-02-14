@@ -46,6 +46,19 @@ export async function getSuggestionsAction(params?: {
     params?.limit || 3
   );
 
+  // 新規ユーザー判定用のデータ取得
+  const [visionCount, goalCount, taskCount] = await Promise.all([
+    prisma.visionCard.count({
+      where: { userId: auth.userId, isArchived: false },
+    }),
+    prisma.quarterGoal.count({
+      where: { userId: auth.userId, isArchived: false },
+    }),
+    prisma.task.count({
+      where: { userId: auth.userId },
+    }),
+  ]);
+
   return {
     suggestions,
     snapshot: {
@@ -53,6 +66,12 @@ export async function getSuggestionsAction(params?: {
       primaryState: snapshot.primaryState,
       primaryConfidence: snapshot.primaryConfidence,
       createdAt: snapshot.createdAt,
+    },
+    userStats: {
+      visionCount,
+      goalCount,
+      taskCount,
+      isNewUser: visionCount === 0 && goalCount === 0 && taskCount === 0,
     },
   };
 }

@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [isNewUser, setIsNewUser] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -50,6 +51,11 @@ export default function DashboardPage() {
       // 最新の状態を取得
       if (suggestionsResult.snapshot) {
         setSnapshot(suggestionsResult.snapshot as any);
+      }
+
+      // 新規ユーザー判定
+      if (suggestionsResult.userStats) {
+        setIsNewUser(suggestionsResult.userStats.isNewUser);
       }
     } catch (err: any) {
       if (err.message?.includes('SESSION_INVALID')) {
@@ -286,7 +292,7 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          ) : snapshot?.primaryState === 'NORMAL' ? (
+          ) : isNewUser ? (
             <div className="glass-card rounded-3xl p-12 text-center max-w-3xl mx-auto">
               <div className="text-6xl mb-6 animate-float">👋</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-6">
