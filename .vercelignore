@@ -1,0 +1,2 @@
+# ローカル作業用の symlink（launchd local.taisun-symlink が置く）。Vercel にはアップロードしない（2026-10-28: dangling symlink で next build が ENOENT）
+taisun_agent
